@@ -6,18 +6,13 @@ import { Card, CardContent } from "@/components/ui/card";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Phone, LogOut, Search } from "lucide-react";
 import { Student, Grade, Class, Building } from "@/types/student";
-
-// Mock data - replace with actual data loading
-const mockStudents: Student[] = [
-  { nome: "Alice Paschoa de Jesus", celular_mae: "15991190571", celular_pai: "15991482336" },
-  { nome: "Amanda Alves Siqueira", celular_mae: "15991250610", celular_pai: "15991630747" },
-  { nome: "Arthur Ferreira Moraes", celular_mae: "15988235363", celular_pai: "15996262633" },
-];
+import { loadAllStudents } from "@/data/loadStudents";
 
 const Students = () => {
   const navigate = useNavigate();
-  const [students, setStudents] = useState<Student[]>(mockStudents);
-  const [filteredStudents, setFilteredStudents] = useState<Student[]>(mockStudents);
+  const allStudents = loadAllStudents();
+  const [students] = useState<Student[]>(allStudents);
+  const [filteredStudents, setFilteredStudents] = useState<Student[]>(allStudents);
   const [searchTerm, setSearchTerm] = useState("");
   const [selectedGrade, setSelectedGrade] = useState<Grade | "all">("all");
   const [selectedClass, setSelectedClass] = useState<Class | "all">("all");
@@ -33,6 +28,22 @@ const Students = () => {
   useEffect(() => {
     let filtered = students;
 
+    // Filter by grade
+    if (selectedGrade !== "all") {
+      filtered = filtered.filter((student) => student.ano === selectedGrade);
+    }
+
+    // Filter by class
+    if (selectedClass !== "all") {
+      filtered = filtered.filter((student) => student.turma === selectedClass);
+    }
+
+    // Filter by building
+    if (selectedBuilding !== "all") {
+      filtered = filtered.filter((student) => student.predio === selectedBuilding);
+    }
+
+    // Filter by search term
     if (searchTerm) {
       filtered = filtered.filter(
         (student) =>
