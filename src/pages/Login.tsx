@@ -1,9 +1,9 @@
-import { useState } from "react";
-import { useNavigate } from "react-router-dom";
 import { Button } from "@/components/ui/button";
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import { useState } from "react";
+import { useNavigate } from "react-router-dom";
 import { toast } from "sonner";
 
 const Login = () => {
@@ -15,12 +15,12 @@ const Login = () => {
     e.preventDefault();
     
     // Simple mock authentication
-    if (username && password) {
+    if (username === "inspetora@gmail.com" && password === "senha123") {
       localStorage.setItem("isAuthenticated", "true");
       toast.success("Login realizado com sucesso!");
       navigate("/students");
     } else {
-      toast.error("Por favor, preencha todos os campos");
+      toast.error("Usuário ou senha inválidos");
     }
   };
 

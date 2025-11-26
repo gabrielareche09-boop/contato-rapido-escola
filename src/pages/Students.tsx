@@ -1,22 +1,28 @@
-import { useState, useEffect } from "react";
-import { useNavigate } from "react-router-dom";
-import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { Phone, LogOut, Search } from "lucide-react";
-import { Student, Grade, Class, Building } from "@/types/student";
-import { loadAllStudents } from "@/data/loadStudents";
+import { Input } from "@/components/ui/input";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
+import { Building, Class, Grade, Student } from "@/types/student";
+import { LogOut, Phone, Search } from "lucide-react";
+import { useEffect, useState } from "react";
+import { useNavigate } from "react-router-dom";
 
 const Students = () => {
   const navigate = useNavigate();
-  const allStudents = loadAllStudents();
-  const [students] = useState<Student[]>(allStudents);
-  const [filteredStudents, setFilteredStudents] = useState<Student[]>(allStudents);
+  const [students, setStudents] = useState<Student[]>([]);
+  const [filteredStudents, setFilteredStudents] = useState<Student[]>([]);
   const [searchTerm, setSearchTerm] = useState("");
   const [selectedGrade, setSelectedGrade] = useState<Grade | "all">("all");
   const [selectedClass, setSelectedClass] = useState<Class | "all">("all");
-  const [selectedBuilding, setSelectedBuilding] = useState<Building | "all">("all");
+  const [selectedBuilding, setSelectedBuilding] = useState<Building | "all">(
+    "all"
+  );
 
   useEffect(() => {
     const isAuthenticated = localStorage.getItem("isAuthenticated");
@@ -25,33 +31,59 @@ const Students = () => {
     }
   }, [navigate]);
 
+  // Carrega todos os JSONs em /src/data/** usando import.meta.glob (Vite)
+  useEffect(() => {
+    try {
+      const modules = import.meta.glob("/src/data/**/*.json", {
+        query: "?json",
+        eager: true,
+      });
+      const all = Object.entries(modules).flatMap(([p, mod]) => {
+        const arr = Array.isArray(mod)
+          ? mod
+          : Array.isArray((mod as any)?.default)
+          ? (mod as any).default
+          : [];
+        const m =
+          p.match(/(?:\/|\.\/)?src\/data\/([^/]+)\/([^/]+)\.json$/) ||
+          p.match(/(?:\/|\.\/)?data\/([^/]+)\/([^/]+)\.json$/);
+        const gradeFromPath = m ? m[1] : undefined;
+        const classFromPath = m ? m[2] : undefined;
+        return arr.map((s) => ({
+          ...s,
+          __grade: gradeFromPath,
+          __class: classFromPath,
+        }));
+      });
+
+      setStudents(all);
+      setFilteredStudents(all);
+    } catch (err) {
+      console.error("Erro ao carregar JSONs (eager):", err);
+    }
+  }, []);
+
+  // filtro (agora usa grade/turma derivadas do caminho)
   useEffect(() => {
     let filtered = students;
 
-    // Filter by grade
-    if (selectedGrade !== "all") {
-      filtered = filtered.filter((student) => student.ano === selectedGrade);
-    }
-
-    // Filter by class
-    if (selectedClass !== "all") {
-      filtered = filtered.filter((student) => student.turma === selectedClass);
-    }
-
-    // Filter by building
-    if (selectedBuilding !== "all") {
-      filtered = filtered.filter((student) => student.predio === selectedBuilding);
-    }
-
-    // Filter by search term
     if (searchTerm) {
+      const q = searchTerm.toLowerCase();
       filtered = filtered.filter(
         (student) =>
-          student.nome.toLowerCase().includes(searchTerm.toLowerCase()) ||
-          student.celular_mae?.includes(searchTerm) ||
-          student.celular_pai?.includes(searchTerm)
+          student.nome.toLowerCase().includes(q) ||
+          student.celular_mae?.includes(q) ||
+          student.celular_pai?.includes(q)
       );
     }
+
+    if (selectedGrade !== "all") {
+      filtered = filtered.filter((s) => (s as any).__grade === selectedGrade);
+    }
+    if (selectedClass !== "all") {
+      filtered = filtered.filter((s) => (s as any).__class === selectedClass);
+    }
+    // selectedBuilding: só se você tiver essa meta (veja nota abaixo)
 
     setFilteredStudents(filtered);
   }, [searchTerm, selectedGrade, selectedClass, selectedBuilding, students]);
@@ -98,28 +130,34 @@ const Students = () => {
 
         {/* Filters */}
         <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
-          <Select value={selectedGrade} onValueChange={(value) => setSelectedGrade(value as Grade | "all")}>
+          <Select
+            value={selectedGrade}
+            onValueChange={(value) => setSelectedGrade(value as Grade | "all")}
+          >
             <SelectTrigger className="h-12">
               <SelectValue placeholder="Ano" />
             </SelectTrigger>
             <SelectContent>
               <SelectItem value="all">Todos os anos</SelectItem>
-              <SelectItem value="1 ano">1º ano</SelectItem>
-              <SelectItem value="2 ano">2º ano</SelectItem>
-              <SelectItem value="3 ano">3º ano</SelectItem>
-              <SelectItem value="4 ano">4º ano</SelectItem>
-              <SelectItem value="5 ano">5º ano</SelectItem>
-              <SelectItem value="6 ano">6º ano</SelectItem>
-              <SelectItem value="7 ano">7º ano</SelectItem>
-              <SelectItem value="8 ano">8º ano</SelectItem>
-              <SelectItem value="9 ano">9º ano</SelectItem>
-              <SelectItem value="1 medio">1º médio</SelectItem>
-              <SelectItem value="2 medio">2º médio</SelectItem>
-              <SelectItem value="3 medio">3º médio</SelectItem>
+              <SelectItem value="1-ano">1º ano</SelectItem>
+              <SelectItem value="2-ano">2º ano</SelectItem>
+              <SelectItem value="3-ano">3º ano</SelectItem>
+              <SelectItem value="4-ano">4º ano</SelectItem>
+              <SelectItem value="5-ano">5º ano</SelectItem>
+              <SelectItem value="6-ano">6º ano</SelectItem>
+              <SelectItem value="7-ano">7º ano</SelectItem>
+              <SelectItem value="8-ano">8º ano</SelectItem>
+              <SelectItem value="9-ano">9º ano</SelectItem>
+              <SelectItem value="1-medio">1º médio</SelectItem>
+              <SelectItem value="2-medio">2º médio</SelectItem>
+              <SelectItem value="3-medio">3º médio</SelectItem>
             </SelectContent>
           </Select>
 
-          <Select value={selectedClass} onValueChange={(value) => setSelectedClass(value as Class | "all")}>
+          <Select
+            value={selectedClass}
+            onValueChange={(value) => setSelectedClass(value as Class | "all")}
+          >
             <SelectTrigger className="h-12">
               <SelectValue placeholder="Turma" />
             </SelectTrigger>
@@ -133,7 +171,12 @@ const Students = () => {
             </SelectContent>
           </Select>
 
-          <Select value={selectedBuilding} onValueChange={(value) => setSelectedBuilding(value as Building | "all")}>
+          <Select
+            value={selectedBuilding}
+            onValueChange={(value) =>
+              setSelectedBuilding(value as Building | "all")
+            }
+          >
             <SelectTrigger className="h-12">
               <SelectValue placeholder="Prédio" />
             </SelectTrigger>
@@ -147,7 +190,9 @@ const Students = () => {
 
         {/* Results Count */}
         <p className="text-sm text-muted-foreground">
-          {filteredStudents.length} aluno{filteredStudents.length !== 1 ? "s" : ""} encontrado{filteredStudents.length !== 1 ? "s" : ""}
+          {filteredStudents.length} aluno
+          {filteredStudents.length !== 1 ? "s" : ""} encontrado
+          {filteredStudents.length !== 1 ? "s" : ""}
         </p>
 
         {/* Students List */}
@@ -160,14 +205,12 @@ const Students = () => {
                   <div className="flex items-center justify-between">
                     <div className="flex-1">
                       <p className="text-sm text-muted-foreground">Mãe</p>
-                      <p className="font-medium">{formatPhone(student.celular_mae)}</p>
+                      <p className="font-medium">
+                        {formatPhone(student.celular_mae || student.celularMae)}
+                      </p>
                     </div>
-                    {student.celular_mae && (
-                      <Button
-                        size="sm"
-                        className="ml-2"
-                        asChild
-                      >
+                    {(student.celular_mae || student.celularMae) && (
+                      <Button size="sm" className="ml-2" asChild>
                         <a href={`tel:${student.celular_mae}`}>
                           <Phone className="h-4 w-4 mr-1" />
                           Ligar
@@ -178,14 +221,12 @@ const Students = () => {
                   <div className="flex items-center justify-between">
                     <div className="flex-1">
                       <p className="text-sm text-muted-foreground">Pai</p>
-                      <p className="font-medium">{formatPhone(student.celular_pai)}</p>
+                      <p className="font-medium">
+                        {formatPhone(student.celular_pai || student.celularPai)}
+                      </p>
                     </div>
-                    {student.celular_pai && (
-                      <Button
-                        size="sm"
-                        className="ml-2"
-                        asChild
-                      >
+                    {(student.celular_pai || student.celularPai) && (
+                      <Button size="sm" className="ml-2" asChild>
                         <a href={`tel:${student.celular_pai}`}>
                           <Phone className="h-4 w-4 mr-1" />
                           Ligar
