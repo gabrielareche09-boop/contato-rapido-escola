@@ -98,6 +98,35 @@ const Students = () => {
     return phone.replace(/(\d{2})(\d{5})(\d{4})/, "($1) $2-$3");
   };
 
+  const formatGrade = (g?: string | undefined) => {
+    if (!g) return "";
+    const map: Record<string, string> = {
+      "1-ano": "1º ano",
+      "2-ano": "2º ano",
+      "3-ano": "3º ano",
+      "4-ano": "4º ano",
+      "5-ano": "5º ano",
+      "6-ano": "6º ano",
+      "7-ano": "7º ano",
+      "8-ano": "8º ano",
+      "9-ano": "9º ano",
+      "1-medio": "1º médio",
+      "2-medio": "2º médio",
+      "3-medio": "3º médio",
+      // variações que podem aparecer
+      "1 ano": "1º ano",
+      "2 ano": "2º ano",
+      "1 medio": "1º médio",
+      "1 médio": "1º médio",
+    };
+    return map[g] ?? g;
+  };
+
+  const formatClass = (c?: string | undefined) => {
+    if (!c) return "";
+    return `Turma ${c.toString().toUpperCase()}`;
+  };
+
   return (
     <div className="min-h-screen bg-background pb-20">
       {/* Header */}
@@ -200,7 +229,22 @@ const Students = () => {
           {filteredStudents.map((student, index) => (
             <Card key={index} className="overflow-hidden">
               <CardContent className="p-4">
-                <h3 className="font-semibold text-lg mb-3">{student.nome}</h3>
+                <h3 className="font-semibold text-lg mb-3">
+                  {student.nome}
+                  {/* mostra ano e turma se existir */}
+                  {(student as any).__grade || (student as any).__class ? (
+                    <span className="text-sm text-muted-foreground font-normal ml-2">
+                      ({formatGrade((student as any).__grade)}
+                      {(student as any).__grade && (student as any).__class
+                        ? " • "
+                        : ""}
+                      {(student as any).__class
+                        ? formatClass((student as any).__class)
+                        : ""}
+                      )
+                    </span>
+                  ) : null}
+                </h3>
                 <div className="space-y-2">
                   <div className="flex items-center justify-between">
                     <div className="flex-1">
